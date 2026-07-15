@@ -1,0 +1,51 @@
+app.get('/api/query-video', async (req, res) => {
+  try {
+    const { videoId } = req.query;
+    if (!videoId) {
+      return res.status(400).json({ error: '缺少 videoId' });
+    }
+
+    // 查询 Agnes 视频状态
+    const queryUrl = `${AGNES_BASE}/agnesapi?video_id=${encodeURIComponent(videoId)}`;
+    const resp = await fetch(queryUrl, {
+      headers: { 'Authorization': `Bearer ${AGNES_API_KEY}` },
+    });
+
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => '');
+      throw new Error(`查询视频失败 (${resp.status}): ${text}`);
+    }
+
+    const data = await resp.json();
+    const status = data?.status || 'processing';
+    const remoteVideoUrl = data?.video_url || '';
+    let localVideoUrl = '';
+
+    // 如果已完成且有远程 URL，下载到本地
+    if (status === 'completed' && remoteVideoUrl) {
+      try {
+        const filename = await downloadToLocal(remoteVideoUrl, '.mp4');
+        localVideoUrl = `/outputs/${filename}`;
+        console.log(`  ✅ 视频已下载到本地: ${localVideoUrl}`);
+      } catch (dlErr) {
+        // 下载失败时仍返回远程 URL 作为降级方案
+        console.warn(`  ⚠️ 视频下载失败，降级使用远程 URL: ${dlErr.message}`);
+        localVideoUrl = remoteVideoUrl;
+      }
+    }
+
+    res.json({
+      status,
+      videoUrl: localVideoUrl || remoteVideoUrl,  // 优先本地
+      remoteVideoUrl: remoteVideoUrl,               // 保留远程 URL 备用
+    });
+  } catch (err) {
+    console.error('❌ 查询视频失败:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * GET /api/health
+ * 健康检查
+ */

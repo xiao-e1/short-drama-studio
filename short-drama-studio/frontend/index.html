@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>短剧智能工坊</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ============================================================
+     左侧边栏 (280px)
+     ============================================================ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">🎬 短剧智能工坊</div>
+
+  <button class="btn btn-primary btn-full" id="btnNewProject">✨ 新建项目</button>
+
+  <div class="project-list" id="projectList">
+    <div class="project-list-title">📁 我的项目</div>
+    <div id="projectListItems"></div>
+  </div>
+
+  <div class="sidebar-spacer"></div>
+
+  <!-- 数据管理区 -->
+  <div class="sidebar-section">
+    <div class="sidebar-section-title">🗂️ 数据管理</div>
+    <button class="btn btn-danger btn-sm btn-full" id="btnClearData">⚠️ 清除所有本地数据</button>
+    <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">
+      存储版本: <span id="storageVersion">v2</span>
+    </div>
+  </div>
+</aside>
+
+<!-- ============================================================
+     右侧主区域
+     ============================================================ -->
+<div class="main-area">
+
+  <!-- 顶部栏 -->
+  <div class="top-bar">
+    <input type="text" class="project-name-input" id="projectNameInput" value="未命名项目" placeholder="输入项目名称">
+    <div class="top-bar-right">
+      <button class="server-status status-button" id="serverStatus" data-action="open-key">检查连接...</button>
+      <div class="orientation-toggle" id="orientationToggle">
+        <button class="orientation-btn active" data-orient="portrait">📱 竖屏 9:16</button>
+        <button class="orientation-btn" data-orient="landscape">🖥️ 横屏 16:9</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="content-area">
+    <!-- 中央主区域 -->
+    <div class="content-main" id="contentMain">
+      <!-- 步骤条 -->
+      <div class="step-bar" id="stepBar"></div>
+
+      <!-- 动态内容区 -->
+      <div id="dynamicContent"></div>
+    </div>
+
+    <!-- 视频片段管理面板（右侧展开） -->
+    <div class="video-panel" id="videoPanel">
+      <div class="video-panel-header">
+        📋 片段管理
+        <button class="btn btn-xs btn-secondary" id="btnToggleVideoPanel">✕</button>
+      </div>
+      <div class="video-panel-body" id="videoPanelBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 视频播放器弹窗 -->
+<div id="videoModal" class="modal-overlay" style="display:none;"></div>
+
+<!-- Toast 容器 -->
+<div id="toastContainer"></div>
+
+<dialog id="keyDialog" class="key-dialog">
+  <form method="dialog" id="keyForm">
+    <div class="dialog-header"><h2>设置 Agnes API Key</h2><button type="button" class="icon-button" id="closeKeyDialog" aria-label="关闭">×</button></div>
+    <p>Key 只会发送到本机后端，不会写入前端项目数据。</p>
+    <label class="dialog-field">API Key<input id="apiKeyInput" type="password" autocomplete="off" placeholder="sk-..." required minlength="19"></label>
+    <label class="checkbox-row"><input id="persistKey" type="checkbox"> 保存到 <code>backend/.env</code>（重启后仍有效）</label>
+    <div class="dialog-actions"><button class="btn btn-primary" type="submit">验证并保存</button></div>
+  </form>
+</dialog>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>

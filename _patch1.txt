@@ -1,0 +1,66 @@
+/** 动态视频限流器
+ * - 每 2 分钟最多 2 次请求（滑动窗口）
+ * - 成功后最小间隔 15 秒
+ * - 遇到 429 时等待 60 秒后重试
+ */
+const VIDEO_RATE_LIMIT = {
+  timestamps: [],              // 滑动窗口请求时间戳
+  maxRequests: 2,              // 每窗口最大请求数
+  windowMs: 120_000,           // 2 分钟窗口
+  successIntervalMs: 15_000,   // 成功后最小间隔 15 秒
+  rateLimitWaitMs: 60_000,     // 429 后等待 60 秒
+};
+
+/** 最大重试次数 */
+const MAX_RETRIES = 3;
+
+/**
+ * 动态视频限流等待：根据实际请求历史智能控制间隔
+ * @param {boolean} is429 - 是否因为收到 429 触发的等待
+ */
+async function waitForVideoRateLimit(is429 = false) {
+  const now = Date.now();
+
+  // 429 限流时强制等待 60 秒后重试
+  if (is429) {
+    const waitSec = VIDEO_RATE_LIMIT.rateLimitWaitMs / 1000;
+    console.log('  铃?收到 429 限流，等待 ' + waitSec + ' 秒后重试...');
+    await new Promise(r => setTimeout(r, VIDEO_RATE_LIMIT.rateLimitWaitMs));
+    const t = Date.now();
+    while (VIDEO_RATE_LIMIT.timestamps.length > 0 && t - VIDEO_RATE_LIMIT.timestamps[0] > VIDEO_RATE_LIMIT.windowMs) {
+      VIDEO_RATE_LIMIT.timestamps.shift();
+    }
+    return;
+  }
+
+  // 清理 2 分钟窗口外的旧时间戳
+  while (VIDEO_RATE_LIMIT.timestamps.length > 0 && now - VIDEO_RATE_LIMIT.timestamps[0] > VIDEO_RATE_LIMIT.windowMs) {
+    VIDEO_RATE_LIMIT.timestamps.shift();
+  }
+
+  // 窗口内已达上限（2 次），等待最旧请求过期
+  if (VIDEO_RATE_LIMIT.timestamps.length >= VIDEO_RATE_LIMIT.maxRequests) {
+    const waitMs = VIDEO_RATE_LIMIT.timestamps[0] + VIDEO_RATE_LIMIT.windowMs - now;
+    if (waitMs > 0) {
+      console.log('  铃?视频限流（' + VIDEO_RATE_LIMIT.maxRequests + '次/' + Math.round(VIDEO_RATE_LIMIT.windowMs / 1000) + '秒）：等待 ' + Math.ceil(waitMs / 1000) + ' 秒...');
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+    const t = Date.now();
+    while (VIDEO_RATE_LIMIT.timestamps.length > 0 && t - VIDEO_RATE_LIMIT.timestamps[0] > VIDEO_RATE_LIMIT.windowMs) {
+      VIDEO_RATE_LIMIT.timestamps.shift();
+    }
+  }
+
+  // 上次成功后至少间隔 15 秒
+  if (VIDEO_RATE_LIMIT.timestamps.length > 0) {
+    const lastTime = VIDEO_RATE_LIMIT.timestamps[VIDEO_RATE_LIMIT.timestamps.length - 1];
+    const elapsed = Date.now() - lastTime;
+    if (elapsed < VIDEO_RATE_LIMIT.successIntervalMs) {
+      const waitMs = VIDEO_RATE_LIMIT.successIntervalMs - elapsed;
+      console.log('  铃?视频间隔（' + Math.round(VIDEO_RATE_LIMIT.successIntervalMs / 1000) + '秒）：等待 ' + Math.ceil(waitMs / 1000) + ' 秒...');
+      await new Promise(r => setTimeout(r, waitMs));
+    }
+  }
+
+  VIDEO_RATE_LIMIT.timestamps.push(Date.now());
+}

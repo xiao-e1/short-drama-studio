@@ -1,0 +1,31 @@
+{
+  "name": "short-drama-studio-backend",
+  "version": "1.0.0",
+  "description": "短剧智能工坊 — 后端代理服务",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.0",
+    "fs-extra": "^11.2.0",
+    "node-fetch": "^2.7.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "collectCoverageFrom": [
+      "routes/**/*.js",
+      "services/**/*.js"
+    ]
+  }
+}
